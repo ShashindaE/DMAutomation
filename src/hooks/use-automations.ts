@@ -41,7 +41,7 @@ export const useEditAutomation = (automationId: string) => {
   )
 
   useEffect(() => {
-    function handleClickOutside(this: Document, event: MouseEvent) {
+    const handleClickOutside = (event: MouseEvent) => {
       if (
         inputRef.current &&
         !inputRef.current.contains(event.target as Node | null)
@@ -57,7 +57,7 @@ export const useEditAutomation = (automationId: string) => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [])
+  }, [edit, disableEdit, inputRef, mutate])
 
   return {
     edit,
