@@ -10,7 +10,7 @@ import {
 } from '@/actions/automations'
 import { useMutationData } from './use-mutation-data'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import useZodForm from './use-zod-form'
 import { AppDispatch, useAppSelector } from '@/redux/store'
 import { useDispatch } from 'react-redux'
@@ -29,8 +29,8 @@ export const useCreateAutomation = (id?: string) => {
 export const useEditAutomation = (automationId: string) => {
   const [edit, setEdit] = useState(false)
   const inputRef = useRef<HTMLInputElement | null>(null)
-  const enableEdit = () => setEdit(true)
-  const disableEdit = () => setEdit(false)
+  const enableEdit = useCallback(() => setEdit(true), [])
+  const disableEdit = useCallback(() => setEdit(false), [])
 
   const { isPending, mutate } = useMutationData(
     ['update-automation'],
@@ -50,7 +50,6 @@ export const useEditAutomation = (automationId: string) => {
           mutate({ name: inputRef.current.value })
         } else {
           disableEdit()
-          mutate()
         }
       }
     }
