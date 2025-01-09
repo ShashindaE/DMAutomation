@@ -50,6 +50,7 @@ export const useEditAutomation = (automationId: string) => {
           mutate({ name: inputRef.current.value })
         } else {
           disableEdit()
+          mutate()
         }
       }
     }
