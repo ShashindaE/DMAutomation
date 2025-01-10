@@ -4,18 +4,28 @@ import { client } from '@/lib/prisma'
 import { v4 } from 'uuid'
 
 export const createAutomation = async (clerkId: string, id?: string) => {
-  return await client.user.update({
-    where: {
-      clerkId,
-    },
-    data: {
-      automations: {
-        create: {
-          ...(id && { id }),
+  try {
+    return await client.user.update({
+      where: {
+        clerkId,
+      },
+      data: {
+        automations: {
+          create: {
+            ...(id && { id }),
+            name: 'Untitled',
+            active: false,
+          },
         },
       },
-    },
-  })
+      include: {
+        automations: true,
+      },
+    })
+  } catch (error) {
+    console.error('Error creating automation:', error)
+    throw error
+  }
 }
 
 export const getAutomations = async (clerkId: string) => {
