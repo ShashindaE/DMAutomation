@@ -8,6 +8,11 @@ type IntialStateTriggerProps = {
     types?: string[]
     keywords?: string[]
   }
+  conversation?: {
+    context: string[]
+    lastResponse?: string
+    messageCount: number
+  }
 }
 
 const InitialState: IntialStateTriggerProps = {
@@ -17,6 +22,11 @@ const InitialState: IntialStateTriggerProps = {
     types: [],
     keywords: [],
   },
+  conversation: {
+    context: [],
+    lastResponse: undefined,
+    messageCount: 0
+  }
 }
 
 export const AUTOMATION = createSlice({
@@ -30,8 +40,37 @@ export const AUTOMATION = createSlice({
       )
       return state
     },
+    UPDATE_CONVERSATION: (
+      state,
+      action: PayloadAction<{
+        message: string
+        response?: string
+      }>
+    ) => {
+      // Add message to context
+      state.conversation!.context.push(action.payload.message)
+      
+      // Update last response if provided
+      if (action.payload.response) {
+        state.conversation!.lastResponse = action.payload.response
+      }
+      
+      // Increment message count
+      state.conversation!.messageCount++
+      
+      // Keep only last 5 messages for context
+      if (state.conversation!.context.length > 5) {
+        state.conversation!.context = state.conversation!.context.slice(-5)
+      }
+      
+      return state
+    },
+    RESET_CONVERSATION: (state) => {
+      state.conversation = InitialState.conversation
+      return state
+    }
   },
 })
 
-export const { TRIGGER } = AUTOMATION.actions
+export const { TRIGGER, UPDATE_CONVERSATION, RESET_CONVERSATION } = AUTOMATION.actions
 export default AUTOMATION.reducer

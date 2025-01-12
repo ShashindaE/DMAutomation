@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import Loader from '../../loader'
+import { useAppSelector } from '@/redux/store'
 
 type Props = {
   id: string
@@ -21,6 +22,9 @@ const ThenAction = ({ id }: Props) => {
     register,
     isPending,
   } = useListener(id)
+  
+  const triggerTypes = useAppSelector((state) => state.AutmationReducer.trigger?.types)
+  const hasCommentTrigger = triggerTypes?.includes('COMMENT')
 
   return (
     <TriggerButton label="Then">
@@ -80,11 +84,13 @@ const ThenAction = ({ id }: Props) => {
             {...register('prompt')}
             className="bg-background-80 outline-none border-none ring-0 focus:ring-0"
           />
-          <Input
-            {...register('reply')}
-            placeholder="Add a reply for comments (Optional)"
-            className="bg-background-80 outline-none border-none ring-0 focus:ring-0"
-          />
+          {hasCommentTrigger && (
+            <Input
+              {...register('reply')}
+              placeholder="Add a reply for comments (Optional)"
+              className="bg-background-80 outline-none border-none ring-0 focus:ring-0"
+            />
+          )}
           <Button className="bg-gradient-to-br w-full from-[#3352CC] font-medium text-white to-[#1C2D70]">
             <Loader state={isPending}>Add listener</Loader>
           </Button>

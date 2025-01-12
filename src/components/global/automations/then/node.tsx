@@ -12,6 +12,7 @@ type Props = {
 const ThenNode = ({ id }: Props) => {
   const { data } = useQueryAutomation(id)
   const commentTrigger = data?.data?.trigger.find((t) => t.type === 'COMMENT')
+  const isDMOnly = data?.data?.trigger.every((t) => t.type === 'DM')
 
   return !data?.data?.listener ? (
     <></>
@@ -46,12 +47,8 @@ const ThenNode = ({ id }: Props) => {
           {data.data.listener.prompt}
         </p>
       </div>
-      {data.data.posts.length > 0 ? (
-        <></>
-      ) : commentTrigger ? (
+      {data.data.posts.length === 0 && commentTrigger && !isDMOnly && (
         <PostButton id={id} />
-      ) : (
-        <></>
       )}
     </div>
   )
