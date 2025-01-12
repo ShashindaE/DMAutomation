@@ -175,3 +175,55 @@ export const addPost = async (
     },
   })
 }
+
+export const searchAutomations = async (
+  clerkId: string,
+  query: string
+) => {
+  if (!clerkId || !query) {
+    return { data: [] }
+  }
+
+  try {
+    const user = await client.user.findUnique({
+      where: {
+        clerkId: clerkId.toString(),
+      },
+      select: {
+        automations: {
+          where: {
+            OR: [
+              {
+                name: {
+                  contains: query,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                keywords: {
+                  some: {
+                    word: {
+                      contains: query,
+                      mode: 'insensitive',
+                    },
+                  },
+                },
+              },
+            ],
+          },
+          include: {
+            keywords: true,
+            trigger: true,
+            listener: true,
+          },
+          take: 5,
+        },
+      },
+    })
+
+    return { data: user?.automations || [] }
+  } catch (error) {
+    console.error('Error searching automations:', error)
+    return { error: 'Failed to search automations', data: [] }
+  }
+}
