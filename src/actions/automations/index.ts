@@ -1,7 +1,7 @@
 'use server'
 
 import { onCurrentUser } from '../user'
-import { findUser } from '../user/queries'
+import { createUser, findUser } from '../user/queries'
 import {
   addKeyWord,
   addListener,
@@ -15,14 +15,46 @@ import {
 } from './queries'
 
 export const createAutomations = async (id?: string) => {
-  const user = await onCurrentUser()
+  const clerk = await onCurrentUser()
   try {
-    const create = await createAutomation(user.id, id)
-    if (create) return { status: 200, data: 'Automation created', res: create }
+    // First ensure user exists in database
+    let dbUser = await findUser(clerk.id)
+    if (!dbUser) {
+      // Create user with required fields
+      await createUser(
+        clerk.id,
+        clerk.firstName || '',
+        clerk.lastName || '',
+        clerk.emailAddresses[0].emailAddress
+      )
+      // Fetch the newly created user to get full user object
+      dbUser = await findUser(clerk.id)
+      if (!dbUser) {
+        throw new Error('Failed to create user')
+      }
+    }
 
-    return { status: 404, data: 'Oops! something went wrong' }
+    const create = await createAutomation(clerk.id, id)
+    if (create) {
+      return { 
+        status: 200, 
+        data: 'Automation created', 
+        res: create 
+      }
+    }
+
+    return { 
+      status: 404, 
+      data: 'Oops! something went wrong',
+      res: null
+    }
   } catch (error) {
-    return { status: 500, data: 'Internal server error' }
+    console.error('Error in createAutomations:', error)
+    return { 
+      status: 500, 
+      data: 'Internal server error',
+      res: null
+    }
   }
 }
 
