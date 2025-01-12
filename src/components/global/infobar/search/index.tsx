@@ -25,8 +25,8 @@ const Search = ({ slug }: Props) => {
   const { searchTerm, setSearchTerm, searchResults, isLoading, error } = useSearch()
 
   return (
-    <div className="relative w-full max-w-[600px]">
-      <div className="flex overflow-hidden gap-x-2 border-[1px] border-[#3352CC] rounded-full px-4 py-1 items-center flex-1">
+    <div className="flex-1 max-w-[600px]">
+      <div className="flex overflow-hidden gap-x-2 border-[1px] border-[#3352CC] rounded-full px-4 py-1 items-center w-full">
         <SearchIcon color="#3352CC" />
         <Input
           value={searchTerm}
@@ -47,24 +47,24 @@ const Search = ({ slug }: Props) => {
       </div>
 
       {searchTerm && (
-        <div className="absolute top-full mt-2 w-full z-50">
+        <div className="absolute mt-2 w-[600px] z-50">
           <Command className="rounded-lg border shadow-md">
             <CommandList>
               <CommandEmpty>No results found.</CommandEmpty>
               <CommandGroup heading="Automations">
-                {searchResults.map((automation) => (
+                {searchResults?.map((result) => (
                   <CommandItem
-                    key={automation.id}
+                    key={result.id}
                     onSelect={() => {
-                      router.push(`/dashboard/${slug}/automations/${automation.id}`)
+                      router.push(`/dashboard/${slug}/automations/${result.id}`)
                       setSearchTerm('')
                     }}
                   >
                     <div className="flex flex-col">
-                      <p className="text-sm font-medium">{automation.name}</p>
-                      {automation.keywords.length > 0 && (
+                      <p className="text-sm font-medium">{result.name}</p>
+                      {result.keywords.length > 0 && (
                         <p className="text-xs text-muted-foreground">
-                          Keywords: {automation.keywords.map(k => k.word).join(', ')}
+                          Keywords: {result.keywords.map(k => k.word).join(', ')}
                         </p>
                       )}
                     </div>

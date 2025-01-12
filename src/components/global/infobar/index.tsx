@@ -28,8 +28,8 @@ const InfoBar = ({ slug }: Props) => {
   return (
     currentPage && (
       <div className="flex flex-col">
-        <div className="flex gap-x-3 lg:gap-x-5 justify-end">
-          <span className="lg:hidden flex items-center flex-1 gap-x-2">
+        <div className="flex items-center gap-x-3 lg:gap-x-5">
+          <span className="lg:hidden flex items-center gap-x-2">
             <Sheet
               trigger={<Menu />}
               className="lg:hidden"
@@ -69,7 +69,9 @@ const InfoBar = ({ slug }: Props) => {
               </div>
             </Sheet>
           </span>
-          <Search />
+          <div className="flex-1">
+            <Search slug={slug} />
+          </div>
           <CreateAutomation />
           <Notifications />
         </div>
