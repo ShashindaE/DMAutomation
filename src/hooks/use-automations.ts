@@ -73,12 +73,12 @@ export const useListener = (id: string) => {
 
   const promptSchema = z.object({
     prompt: z.string().min(1),
-    reply: z.string(),
+    reply: z.string().optional(),
   })
 
   const { isPending, mutate } = useMutationData(
     ['create-lister'],
-    (data: { prompt: string; reply: string }) =>
+    (data: { prompt: string; reply?: string }) =>
       saveListener(id, listener || 'MESSAGE', data.prompt, data.reply),
     'automation-info'
   )

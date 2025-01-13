@@ -1,7 +1,6 @@
 'use server'
 
 import { client } from '@/lib/prisma'
-import { type MEDIATYPE } from '@prisma/client'
 import { v4 } from 'uuid'
 
 export const createAutomation = async (clerkId: string, id?: string) => {
@@ -13,7 +12,7 @@ export const createAutomation = async (clerkId: string, id?: string) => {
       data: {
         automations: {
           create: {
-            ...(id && { id }),
+            id: id || v4(),
             name: 'Untitled',
             active: false,
           },
@@ -103,6 +102,11 @@ export const addListener = async (
         },
       },
     },
+    include: {
+      listener: true,
+      trigger: true,
+      keywords: true,
+    },
   })
 }
 
@@ -173,10 +177,15 @@ export const addPost = async (
           createMany: {
             data: posts.map(post => ({
               ...post,
-              mediaType: post.mediaType as MEDIATYPE
+              mediaType: post.mediaType
             })),
           },
         },
+      },
+      include: {
+        keywords: true,
+        trigger: true,
+        listener: true,
       },
     })
   } catch (error) {
