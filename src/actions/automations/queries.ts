@@ -1,6 +1,7 @@
 'use server'
 
 import { client } from '@/lib/prisma'
+import { type MEDIATYPE } from '@prisma/client'
 import { v4 } from 'uuid'
 
 export const createAutomation = async (clerkId: string, id?: string) => {
@@ -159,21 +160,29 @@ export const addPost = async (
     postid: string
     caption?: string
     media: string
-    mediaType: 'IMAGE' | 'VIDEO' | 'CAROSEL_ALBUM'
+    mediaType: 'IMAGE' | 'VIDEO' | 'CAROUSEL_ALBUM'
   }[]
 ) => {
-  return await client.automation.update({
-    where: {
-      id: autmationId,
-    },
-    data: {
-      posts: {
-        createMany: {
-          data: posts,
+  try {
+    return await client.automation.update({
+      where: {
+        id: autmationId,
+      },
+      data: {
+        posts: {
+          createMany: {
+            data: posts.map(post => ({
+              ...post,
+              mediaType: post.mediaType as MEDIATYPE
+            })),
+          },
         },
       },
-    },
-  })
+    })
+  } catch (error) {
+    console.error('Error adding post:', error)
+    throw error
+  }
 }
 
 export const searchAutomations = async (

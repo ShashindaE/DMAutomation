@@ -56,7 +56,12 @@ export async function POST(req: NextRequest) {
             )
 
             if (direct_message.status === 200) {
-              const tracked = await trackResponses(automation.id, 'DM')
+              const tracked = await trackResponses(
+                automation.id,
+                'DM',
+                webhook_payload.entry[0].messaging[0].message.text,
+                automation.listener?.prompt
+              )
               if (tracked) {
                 return NextResponse.json(
                   {
@@ -108,7 +113,12 @@ export async function POST(req: NextRequest) {
               )
 
               if (direct_message.status === 200) {
-                const tracked = await trackResponses(automation.id, 'DM')
+                const tracked = await trackResponses(
+                  automation.id,
+                  'DM',
+                  webhook_payload.entry[0].messaging[0].message.text,
+                  smart_ai_message.choices[0].message.content
+                )
                 if (tracked) {
                   return NextResponse.json(
                     {
@@ -167,7 +177,12 @@ export async function POST(req: NextRequest) {
 
               console.log('DM SENT', direct_message.data)
               if (direct_message.status === 200) {
-                const tracked = await trackResponses(automation.id, 'COMMENT')
+                const tracked = await trackResponses(
+                  automation.id,
+                  'COMMENT',
+                  webhook_payload.entry[0].changes[0].value.text,
+                  automation.listener?.prompt
+                )
 
                 if (tracked) {
                   return NextResponse.json(
@@ -212,12 +227,17 @@ export async function POST(req: NextRequest) {
                 const direct_message = await sendPrivateMessage(
                   webhook_payload.entry[0].id,
                   webhook_payload.entry[0].changes[0].value.id,
-                  automation.listener?.prompt,
+                  smart_ai_message.choices[0].message.content,
                   automation.User?.integrations[0].token!
                 )
 
                 if (direct_message.status === 200) {
-                  const tracked = await trackResponses(automation.id, 'COMMENT')
+                  const tracked = await trackResponses(
+                    automation.id,
+                    'COMMENT',
+                    webhook_payload.entry[0].changes[0].value.text,
+                    smart_ai_message.choices[0].message.content
+                  )
 
                   if (tracked) {
                     return NextResponse.json(

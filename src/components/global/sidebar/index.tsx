@@ -10,73 +10,45 @@ import { SubscriptionPlan } from '../subscription-plan'
 import UpgradeCard from './upgrade'
 
 type Props = {
-  slug: string
+  workspaceId: string
 }
 
-const Sidebar = ({ slug }: Props) => {
+const Sidebar = ({ workspaceId }: Props) => {
   const { page } = usePaths()
 
   return (
     <div
       className="w-[250px] 
-    border-[1px]
-    radial 
-    fixed 
-    left-0 
-    lg:inline-block
-    border-[#545454] 
-    bg-gradient-to-b from-[#768BDD] 
-    via-[#171717]
-     to-[#768BDD] 
-     hidden 
-     bottom-0 
-     top-0 
-     m-3 
-     rounded-3xl 
-     overflow-hidden"
+      h-screen 
+      fixed 
+      left-0 
+      top-0 
+      bg-[#1E1E1E] 
+      text-white 
+      flex 
+      flex-col 
+      justify-between
+      "
     >
-      <div
-        className="flex flex-col 
-      gap-y-5
-       w-full 
-       h-full 
-       p-3 
-       bg-[#0e0e0e] 
-       bg-opacity-90 
-       bg-clip-padding 
-       backdrop-filter 
-       backdrop--blur__safari 
-       backdrop-blur-3xl"
-      >
-        <div className="flex gap-x-2 items-center p-5 justify-center">
+      <div>
+        <div className="p-5">
           <LogoSmall />
         </div>
-        <div className="flex flex-col py-3">
-          <Items
-            page={page}
-            slug={slug}
-          />
+        <div className="px-4">
+          <Items slug={workspaceId} page="agents" />
         </div>
-        <div className="px-16">
-          <Separator
-            orientation="horizontal"
-            className="bg-[#333336]"
-          />
+        <Separator className="my-4" />
+        <div className="px-4">
+          <ClerkAuthState />
         </div>
-        <div className="px-3 flex flex-col gap-y-5">
-          <div className="flex gap-x-2">
-            <ClerkAuthState />
-            <p className="text-[#9B9CA0]">Profile</p>
-          </div>
-          <div className="flex gap-x-3">
-            <HelpDuoToneWhite />
-            <p className="text-[#9B9CA0]">Help</p>
-          </div>
+      </div>
+      <div className="p-4 space-y-4">
+        <div className="flex items-center space-x-2">
+          <HelpDuoToneWhite />
+          <span className="text-sm">Help & Support</span>
         </div>
         <SubscriptionPlan type="FREE">
-          <div className="flex-1 flex flex-col justify-end">
-            <UpgradeCard />
-          </div>
+          <UpgradeCard />
         </SubscriptionPlan>
       </div>
     </div>

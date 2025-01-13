@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -23,6 +20,7 @@ model User {
   subscription Subscription?
   integrations Integrations[]
   automations  Automation[]
+  workspaces   Workspace[]
 }
 
 model Subscription {
@@ -47,17 +45,18 @@ model Integrations {
 }
 
 model Automation {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name      String    @default("Untitled")
-  createdAt DateTime  @default(now())
-  active    Boolean   @default(false)
-  trigger   Trigger[]
-  listener  Listener?
-  posts     Post[]
-  dms       Dms[]
-  User      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String?   @db.Uuid
-  keywords  Keyword[]
+  id            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String              @default("Untitled")
+  createdAt     DateTime            @default(now())
+  active        Boolean             @default(false)
+  trigger       Trigger[]
+  listener      Listener?
+  posts         Post[]
+  dms           Dms[]
+  User          User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String?             @db.Uuid
+  keywords      Keyword[]
+  conversations AgentConversation[]
 }
 
 model Dms {
@@ -99,12 +98,66 @@ model Trigger {
 }
 
 model Keyword {
-  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   word         String
-  Automation   Automation? @relation(fields: [automationId], references: [id], onDelete: Cascade)
-  automationId String?     @db.Uuid
+  Automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  automationId String     @db.Uuid
+  createdAt    DateTime   @default(now())
 
-  @@unique([automationId, word]) //this constraints ensure user cant use the same keyword on multiple automations
+  @@unique([automationId, word])
+}
+
+model Workspace {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  agents      Agent[]
+  User        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String?  @db.Uuid
+}
+
+model Agent {
+  id            String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  description   String
+  capabilities  String[]
+  model         String
+  temperature   Float
+  maxTokens     Int
+  systemPrompt  String
+  active        Boolean                   @default(true)
+  metricsPeriod String                    @default("DAILY")
+  workspaceId   String                    @db.Uuid
+  workspace     Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  metrics       AgentPerformanceMetrics[]
+  conversations AgentConversation[]
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+}
+
+model AgentConversation {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agentId      String      @db.Uuid
+  agent        Agent       @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  userId       String      @db.Uuid
+  automationId String?     @db.Uuid
+  automation   Automation? @relation(fields: [automationId], references: [id])
+  turns        Json[]
+  status       String
+  startedAt    DateTime
+  endedAt      DateTime?
+  metadata     Json?
+}
+
+model AgentPerformanceMetrics {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  agentId   String   @db.Uuid
+  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  period    String
+  metrics   Json
+  timestamp DateTime
 }
 
 enum SUBSCRIPTION_PLAN {
@@ -116,13 +169,14 @@ enum INTEGRATIONS {
   INSTAGRAM
 }
 
+enum LISTENERS {
+  MESSAGE
+  COMMENT
+  SMARTAI
+}
+
 enum MEDIATYPE {
   IMAGE
   VIDEO
-  CAROSEL_ALBUM
-}
-
-enum LISTENERS {
-  SMARTAI
-  MESSAGE
+  CAROUSEL_ALBUM
 }

@@ -87,7 +87,7 @@ const DeleteAutomation = ({ automationId, automationName }: Props) => {
         <AlertDialogHeader>
           <AlertDialogTitle>Delete Automation</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete "{automationName}"? This action cannot be undone.
+            Are you sure you want to delete &quot;{automationName}&quot;? This action cannot be undone.
             All associated data including triggers, listeners, and responses will be permanently deleted.
           </AlertDialogDescription>
         </AlertDialogHeader>
