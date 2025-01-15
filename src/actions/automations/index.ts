@@ -14,6 +14,16 @@ import {
   updateAutomation,
 } from './queries'
 
+export { addKeyWord }
+export { addListener }
+export { addPost }
+export { addTrigger }
+export { createAutomation }
+export { deleteKeywordQuery }
+export { findAutomation }
+export { getAutomations }
+export { updateAutomation }
+
 export const createAutomations = async (id?: string) => {
   const clerk = await onCurrentUser()
   try {

@@ -70,10 +70,12 @@ export const useEditAutomation = (automationId: string) => {
 
 export const useListener = (id: string) => {
   const [listener, setListener] = useState<'MESSAGE' | 'SMARTAI' | null>(null)
+  const triggerTypes = useAppSelector((state) => state.AutmationReducer.trigger?.types)
+  const hasCommentTrigger = triggerTypes?.includes('COMMENT')
 
   const promptSchema = z.object({
-    prompt: z.string().min(1),
-    reply: z.string().optional(),
+    prompt: z.string().min(1, 'Message is required'),
+    reply: hasCommentTrigger ? z.string().optional() : z.string().optional().default(''),
   })
 
   const { isPending, mutate } = useMutationData(
@@ -89,7 +91,14 @@ export const useListener = (id: string) => {
   )
 
   const onSetListener = (type: 'SMARTAI' | 'MESSAGE') => setListener(type)
-  return { onSetListener, register, onFormSubmit, listener, isPending }
+  return { 
+    onSetListener, 
+    register, 
+    onFormSubmit, 
+    listener, 
+    isPending,
+    hasCommentTrigger 
+  }
 }
 
 export const useTriggers = (id: string) => {

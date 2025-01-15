@@ -15,8 +15,13 @@ export const useQueryAutomations = () => {
 
 export const useQueryAutomation = (id: string) => {
   return useQuery({
-    queryKey: ['automation-info'],
+    queryKey: ['automation-info', id],
     queryFn: () => getAutomationInfo(id),
+    staleTime: 0, // Consider data stale immediately
+    cacheTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   })
 }
 
@@ -34,5 +39,3 @@ export const useQueryAutomationPosts = () => {
     queryFn: fetchPosts,
   })
 }
-
-

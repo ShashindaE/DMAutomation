@@ -1,3 +1,4 @@
+'use client'
 import { useListener } from '@/hooks/use-automations'
 import React from 'react'
 import TriggerButton from '../trigger-button'
@@ -21,14 +22,12 @@ const ThenAction = ({ id }: Props) => {
     onFormSubmit,
     register,
     isPending,
+    hasCommentTrigger,
   } = useListener(id)
-  
-  const triggerTypes = useAppSelector((state) => state.AutmationReducer.trigger?.types)
-  const hasCommentTrigger = triggerTypes?.includes('COMMENT')
 
   return (
     <TriggerButton label="Then">
-      <div className="flex flex-col gap-y-2 ">
+      <div className="flex flex-col gap-y-2">
         {AUTOMATION_LISTENERS.map((listener) =>
           listener.type === 'SMARTAI' ? (
             <SubscriptionPlan
@@ -47,9 +46,9 @@ const ThenAction = ({ id }: Props) => {
               >
                 <div className="flex gap-x-2 items-center">
                   {listener.icon}
-                  <p>{listener.label}</p>
+                  <p className="font-bold">{listener.label}</p>
                 </div>
-                <p>{listener.description}</p>
+                <p className="text-sm font-light">{listener.description}</p>
               </div>
             </SubscriptionPlan>
           ) : (
@@ -65,9 +64,9 @@ const ThenAction = ({ id }: Props) => {
             >
               <div className="flex gap-x-2 items-center">
                 {listener.icon}
-                <p>{listener.label}</p>
+                <p className="font-bold">{listener.label}</p>
               </div>
-              <p>{listener.description}</p>
+              <p className="text-sm font-light">{listener.description}</p>
             </div>
           )
         )}
@@ -79,7 +78,7 @@ const ThenAction = ({ id }: Props) => {
             placeholder={
               Listener === 'SMARTAI'
                 ? 'Add a prompt that your smart ai can use...'
-                : 'Add a message you want send to your customers'
+                : 'Add a message you want to send to your customers'
             }
             {...register('prompt')}
             className="bg-background-80 outline-none border-none ring-0 focus:ring-0"
@@ -91,7 +90,10 @@ const ThenAction = ({ id }: Props) => {
               className="bg-background-80 outline-none border-none ring-0 focus:ring-0"
             />
           )}
-          <Button className="bg-gradient-to-br w-full from-[#3352CC] font-medium text-white to-[#1C2D70]">
+          <Button 
+            disabled={!Listener}
+            className="bg-gradient-to-br w-full from-[#3352CC] font-medium text-white to-[#1C2D70]"
+          >
             <Loader state={isPending}>Add listener</Loader>
           </Button>
         </form>

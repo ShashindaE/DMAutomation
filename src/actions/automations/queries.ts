@@ -95,17 +95,49 @@ export const addListener = async (
     },
     data: {
       listener: {
-        create: {
-          listener,
-          prompt,
-          commentReply: reply,
+        upsert: {
+          create: {
+            listener,
+            prompt,
+            commentReply: reply,
+          },
+          update: {
+            listener,
+            prompt,
+            commentReply: reply,
+          },
         },
       },
     },
     include: {
       listener: true,
-      trigger: true,
-      keywords: true,
+    },
+  })
+}
+
+export const updateListener = async (
+  automationId: string,
+  data: {
+    listener: 'SMARTAI' | 'MESSAGE'
+    prompt: string
+    reply?: string
+  }
+) => {
+  return await client.automation.update({
+    where: {
+      id: automationId,
+    },
+    data: {
+      listener: {
+        update: {
+          listener: data.listener,
+          prompt: data.prompt,
+          commentReply: data.reply,
+        },
+      },
+    },
+    include: {
+      listener: true,
     },
   })
 }
@@ -153,9 +185,24 @@ export const addKeyWord = async (automationId: string, keyword: string) => {
 }
 
 export const deleteKeywordQuery = async (id: string) => {
-  return client.keyword.delete({
-    where: { id },
-  })
+  try {
+    // First check if the keyword exists
+    const keyword = await client.keyword.findUnique({
+      where: { id }
+    })
+
+    if (!keyword) {
+      return null
+    }
+
+    // If keyword exists, delete it
+    return await client.keyword.delete({
+      where: { id }
+    })
+  } catch (error) {
+    console.error('Error deleting keyword:', error)
+    throw error
+  }
 }
 
 export const addPost = async (
@@ -243,5 +290,52 @@ export const searchAutomations = async (
   } catch (error) {
     console.error('Error searching automations:', error)
     return { error: 'Failed to search automations', data: [] }
+  }
+}
+
+export const updateTrigger = async (
+  automationId: string,
+  triggers: string[]
+) => {
+  try {
+    // First, delete existing triggers
+    await client.trigger.deleteMany({
+      where: {
+        automationId,
+      },
+    })
+
+    // If changing from comment to DM only, delete posts
+    const hasComment = triggers.includes('COMMENT')
+    if (!hasComment) {
+      await client.post.deleteMany({
+        where: {
+          automationId,
+        },
+      })
+    }
+
+    // Create new triggers
+    const automation = await client.automation.update({
+      where: { id: automationId },
+      data: {
+        trigger: {
+          createMany: {
+            data: triggers.map(type => ({ type })),
+          },
+        },
+      },
+      include: {
+        trigger: true,
+        keywords: true,
+        posts: true,
+        listener: true,
+      },
+    })
+
+    return automation
+  } catch (error) {
+    console.error('Error updating trigger:', error)
+    throw error
   }
 }

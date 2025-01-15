@@ -11,6 +11,8 @@ import { cn } from '@/lib/utils'
 import Keywords from './keywords'
 import { Button } from '@/components/ui/button'
 import Loader from '../../loader'
+import { PencilIcon } from 'lucide-react'
+import EditDialog from '../../automation-editor/edit-dialog'
 
 type Props = {
   id: string
@@ -19,49 +21,78 @@ type Props = {
 const Trigger = ({ id }: Props) => {
   const { types, onSetTrigger, onSaveTrigger, isPending } = useTriggers(id)
   const { data } = useQueryAutomation(id)
+  const [editOpen, setEditOpen] = React.useState(false)
+  const [selectedType, setSelectedType] = React.useState<'COMMENT' | 'DM' | null>(null)
+
+  const handleTriggerSelect = (type: typeof AUTOMATION_TRIGGERS[number]['type']) => {
+    setSelectedType(type)
+    onSetTrigger(type)
+  }
+
+  const handleCreateTrigger = async () => {
+    if (selectedType) {
+      await onSaveTrigger()
+    }
+  }
 
   if (data?.data && data?.data?.trigger.length > 0) {
     return (
-      <div className="flex flex-col ga-y-6 items-center">
-        <ActiveTrigger
-          type={data.data.trigger[0].type}
-          keywords={data.data.keywords}
-        />
+      <>
+        <div className="flex flex-col gap-y-6 items-center relative">
+          <button 
+            onClick={() => setEditOpen(true)}
+            className="absolute top-2 right-2 p-2 rounded-full hover:bg-background-80 transition-colors"
+          >
+            <PencilIcon size={16} />
+          </button>
+          <ActiveTrigger
+            type={data.data.trigger[0].type}
+            keywords={data.data.keywords}
+          />
 
-        {data?.data?.trigger.length > 1 && (
-          <>
-            <div className="relative w-6/12 my-4">
-              <p className="absolute transform  px-2 -translate-y-1/2 top-1/2 -translate-x-1/2 left-1/2">
-                or
-              </p>
-              <Separator
-                orientation="horizontal"
-                className="border-muted border-[1px]"
+          {data?.data?.trigger.length > 1 && (
+            <>
+              <div className="relative w-6/12 my-4">
+                <p className="absolute transform  px-2 -translate-y-1/2 top-1/2 -translate-x-1/2 left-1/2">
+                  or
+                </p>
+                <Separator
+                  orientation="horizontal"
+                  className="border-muted border-[1px]"
+                />
+              </div>
+              <ActiveTrigger
+                type={data.data.trigger[1].type}
+                keywords={data.data.keywords}
               />
-            </div>
-            <ActiveTrigger
-              type={data.data.trigger[1].type}
-              keywords={data.data.keywords}
-            />
-          </>
-        )}
+            </>
+          )}
 
-        {!data.data.listener && <ThenAction id={id} />}
-      </div>
+          {!data.data.listener && <ThenAction id={id} />}
+        </div>
+        <EditDialog
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          type="trigger"
+          data={data.data}
+          id={id}
+        />
+      </>
     )
   }
+
   return (
     <TriggerButton label="Add Trigger">
       <div className="flex flex-col gap-y-2">
         {AUTOMATION_TRIGGERS.map((trigger) => (
           <div
             key={trigger.id}
-            onClick={() => onSetTrigger(trigger.type)}
+            onClick={() => handleTriggerSelect(trigger.type)}
             className={cn(
               'hover:opacity-80 text-white rounded-xl flex cursor-pointer flex-col p-3 gap-y-2',
-              !types?.find((t) => t === trigger.type)
-                ? 'bg-background-80'
-                : 'bg-gradient-to-br from-[#3352CC] font-medium to-[#1C2D70]'
+              selectedType === trigger.type
+                ? 'bg-gradient-to-br from-[#3352CC] font-medium to-[#1C2D70]'
+                : 'bg-background-80'
             )}
           >
             <div className="flex gap-x-2 items-center">
@@ -73,8 +104,8 @@ const Trigger = ({ id }: Props) => {
         ))}
         <Keywords id={id} />
         <Button
-          onClick={onSaveTrigger}
-          disabled={types?.length === 0}
+          onClick={handleCreateTrigger}
+          disabled={!selectedType}
           className="bg-gradient-to-br from-[#3352CC] font-medium text-white to-[#1C2D70]"
         >
           <Loader state={isPending}>Create Trigger</Loader>
