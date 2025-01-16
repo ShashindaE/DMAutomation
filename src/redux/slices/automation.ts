@@ -34,10 +34,10 @@ export const AUTOMATION = createSlice({
   initialState: InitialState,
   reducers: {
     TRIGGER: (state, action: PayloadAction<IntialStateTriggerProps>) => {
-      state.trigger!.types = duplicateValidation(
-        state.trigger?.types!,
-        action.payload.trigger?.type!
-      )
+      if (!state.trigger) {
+        state.trigger = { types: [] }
+      }
+      state.trigger.types = action.payload.trigger?.types || []
       return state
     },
     UPDATE_CONVERSATION: (

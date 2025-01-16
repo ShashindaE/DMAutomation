@@ -102,12 +102,15 @@ export const useListener = (id: string) => {
 }
 
 export const useTriggers = (id: string) => {
-  const types = useAppSelector((state) => state.AutmationReducer.trigger?.types)
-
+  const types = useAppSelector((state) => state.AutmationReducer.trigger?.types) || []
   const dispatch: AppDispatch = useDispatch()
 
-  const onSetTrigger = (type: 'COMMENT' | 'DM') =>
-    dispatch(TRIGGER({ trigger: { type } }))
+  const onSetTrigger = (type: 'COMMENT' | 'DM') => {
+    const newTypes = types.includes(type)
+      ? types.filter(t => t !== type)
+      : [...types, type]
+    dispatch(TRIGGER({ trigger: { types: newTypes } }))
+  }
 
   const { isPending, mutate } = useMutationData(
     ['add-trigger'],

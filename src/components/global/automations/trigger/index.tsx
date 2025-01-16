@@ -22,15 +22,13 @@ const Trigger = ({ id }: Props) => {
   const { types, onSetTrigger, onSaveTrigger, isPending } = useTriggers(id)
   const { data } = useQueryAutomation(id)
   const [editOpen, setEditOpen] = React.useState(false)
-  const [selectedType, setSelectedType] = React.useState<'COMMENT' | 'DM' | null>(null)
 
   const handleTriggerSelect = (type: typeof AUTOMATION_TRIGGERS[number]['type']) => {
-    setSelectedType(type)
     onSetTrigger(type)
   }
 
   const handleCreateTrigger = async () => {
-    if (selectedType) {
+    if (types && types.length > 0) {
       await onSaveTrigger()
     }
   }
@@ -90,7 +88,7 @@ const Trigger = ({ id }: Props) => {
             onClick={() => handleTriggerSelect(trigger.type)}
             className={cn(
               'hover:opacity-80 text-white rounded-xl flex cursor-pointer flex-col p-3 gap-y-2',
-              selectedType === trigger.type
+              types?.includes(trigger.type)
                 ? 'bg-gradient-to-br from-[#3352CC] font-medium to-[#1C2D70]'
                 : 'bg-background-80'
             )}
@@ -105,7 +103,7 @@ const Trigger = ({ id }: Props) => {
         <Keywords id={id} />
         <Button
           onClick={handleCreateTrigger}
-          disabled={!selectedType}
+          disabled={!types || types.length === 0}
           className="bg-gradient-to-br from-[#3352CC] font-medium text-white to-[#1C2D70]"
         >
           <Loader state={isPending}>Create Trigger</Loader>

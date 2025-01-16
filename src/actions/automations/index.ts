@@ -170,16 +170,22 @@ export const getProfilePosts = async () => {
   const user = await onCurrentUser()
   try {
     const profile = await findUser(user.id)
+    if (!profile?.integrations?.[0]?.token) {
+      console.log('🔴 No Instagram integration found')
+      return { status: 404, message: 'No Instagram integration found' }
+    }
+
     const posts = await fetch(
-      `${process.env.INSTAGRAM_BASE_URL}/me/media?fields=id,caption,media_url,media_type,timestamp&limit=10&access_token=${profile?.integrations[0].token}`
+      `${process.env.INSTAGRAM_BASE_URL}/me/media?fields=id,caption,media_url,media_type,timestamp&limit=10&access_token=${profile.integrations[0].token}`
     )
     const parsed = await posts.json()
     if (parsed) return { status: 200, data: parsed }
+    
     console.log('🔴 Error in getting posts')
-    return { status: 404 }
+    return { status: 404, message: 'Error fetching posts' }
   } catch (error) {
     console.log('🔴 server side Error in getting posts ', error)
-    return { status: 500 }
+    return { status: 500, message: 'Server error while fetching posts' }
   }
 }
 

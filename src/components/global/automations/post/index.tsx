@@ -19,7 +19,12 @@ const PostButton = ({ id }: Props) => {
 
   return (
     <TriggerButton label="Attach a post">
-      {data?.status === 200 ? (
+      {data?.status === 404 && data?.message === 'No Instagram integration found' ? (
+        <div className="flex flex-col gap-y-3 items-center justify-center p-4">
+          <p className="text-text-secondary text-sm">No Instagram integration found.</p>
+          <p className="text-text-secondary text-sm">Please connect your Instagram account first.</p>
+        </div>
+      ) : data?.status === 200 ? (
         <div className="flex flex-col gap-y-3 w-full">
           <div className="flex flex-wrap w-full gap-3">
             {data.data.data.map((post: InstagramPostProps) => (
@@ -55,16 +60,22 @@ const PostButton = ({ id }: Props) => {
               </div>
             ))}
           </div>
-          <Button
-            onClick={mutate}
-            disabled={posts.length === 0}
-            className="bg-gradient-to-br w-full from-[#3352CC] font-medium text-white to-[#1C2D70]"
-          >
-            <Loader state={isPending}>Attach Post</Loader>
-          </Button>
+          {posts.length > 0 && (
+            <Button
+              onClick={() => mutate({ posts })}
+              disabled={isPending}
+              className="bg-gradient-to-br from-[#3352CC] font-medium text-white to-[#1C2D70] mt-3"
+            >
+              <Loader state={isPending}>Attach Posts</Loader>
+            </Button>
+          )}
         </div>
       ) : (
-        <p className="text-text-secondary text-center">No posts found!</p>
+        <div className="flex flex-col gap-y-3 items-center justify-center p-4">
+          <p className="text-text-secondary text-sm">
+            {data?.message || 'Error loading Instagram posts. Please try again.'}
+          </p>
+        </div>
       )}
     </TriggerButton>
   )
