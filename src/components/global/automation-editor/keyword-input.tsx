@@ -21,10 +21,10 @@ const KeywordInput: React.FC<KeywordInputProps> = ({ id, keywords, onRefresh }) 
 
   const refreshData = async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['automation-info', id] }),
-      queryClient.invalidateQueries({ queryKey: ['user-automations'] }),
-      queryClient.refetchQueries({ queryKey: ['automation-info', id] }),
-      queryClient.refetchQueries({ queryKey: ['user-automations'] })
+      queryClient.invalidateQueries(['automation-info', id]),
+      queryClient.invalidateQueries(['user-automations']),
+      queryClient.refetchQueries(['automation-info', id]),
+      queryClient.refetchQueries(['user-automations'])
     ])
     onRefresh()
   }
@@ -84,7 +84,11 @@ const KeywordInput: React.FC<KeywordInputProps> = ({ id, keywords, onRefresh }) 
 
     try {
       setIsProcessing(true)
-      await deleteKeyword(id, keywordId)
+      const result = await deleteKeyword(id, keywordId)
+      if (!result) {
+        await refreshData()
+        return
+      }
       await refreshData()
     } catch (error) {
       console.error('Failed to delete keyword:', error)

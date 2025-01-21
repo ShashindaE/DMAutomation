@@ -52,7 +52,7 @@ export const useAutomationEdit = (id: string) => {
 
   const deleteKeyword = async (automationId: string, keywordId: string) => {
     try {
-      await deleteKeywordQuery(keywordId)
+      await deleteKeywordQuery(automationId, keywordId)
       toast.success('Keyword deleted')
     } catch (error) {
       toast.error('Failed to delete keyword')
