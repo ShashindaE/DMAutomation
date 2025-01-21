@@ -5,10 +5,10 @@ CREATE TYPE "SUBSCRIPTION_PLAN" AS ENUM ('PRO', 'FREE');
 CREATE TYPE "INTEGRATIONS" AS ENUM ('INSTAGRAM');
 
 -- CreateEnum
-CREATE TYPE "MEDIATYPE" AS ENUM ('IMAGE', 'VIDEO', 'CAROSEL_ALBUM');
+CREATE TYPE "LISTENERS" AS ENUM ('MESSAGE', 'COMMENT', 'SMARTAI');
 
 -- CreateEnum
-CREATE TYPE "LISTENERS" AS ENUM ('SMARTAI', 'MESSAGE');
+CREATE TYPE "MEDIATYPE" AS ENUM ('IMAGE', 'VIDEO', 'CAROUSEL_ALBUM');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -108,9 +108,67 @@ CREATE TABLE "Trigger" (
 CREATE TABLE "Keyword" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "word" TEXT NOT NULL,
-    "automationId" UUID,
+    "automationId" UUID NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Keyword_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Workspace" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "userId" UUID,
+
+    CONSTRAINT "Workspace_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Agent" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "name" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "capabilities" TEXT[],
+    "model" TEXT NOT NULL,
+    "temperature" DOUBLE PRECISION NOT NULL,
+    "maxTokens" INTEGER NOT NULL,
+    "systemPrompt" TEXT NOT NULL,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "metricsPeriod" TEXT NOT NULL DEFAULT 'DAILY',
+    "workspaceId" UUID NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Agent_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AgentConversation" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "agentId" UUID NOT NULL,
+    "userId" UUID NOT NULL,
+    "automationId" UUID,
+    "turns" JSONB[],
+    "status" TEXT NOT NULL,
+    "startedAt" TIMESTAMP(3) NOT NULL,
+    "endedAt" TIMESTAMP(3),
+    "metadata" JSONB,
+
+    CONSTRAINT "AgentConversation_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AgentPerformanceMetrics" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "agentId" UUID NOT NULL,
+    "period" TEXT NOT NULL,
+    "metrics" JSONB NOT NULL,
+    "timestamp" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "AgentPerformanceMetrics_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -160,3 +218,18 @@ ALTER TABLE "Trigger" ADD CONSTRAINT "Trigger_automationId_fkey" FOREIGN KEY ("a
 
 -- AddForeignKey
 ALTER TABLE "Keyword" ADD CONSTRAINT "Keyword_automationId_fkey" FOREIGN KEY ("automationId") REFERENCES "Automation"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Workspace" ADD CONSTRAINT "Workspace_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Agent" ADD CONSTRAINT "Agent_workspaceId_fkey" FOREIGN KEY ("workspaceId") REFERENCES "Workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AgentConversation" ADD CONSTRAINT "AgentConversation_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "Agent"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AgentConversation" ADD CONSTRAINT "AgentConversation_automationId_fkey" FOREIGN KEY ("automationId") REFERENCES "Automation"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AgentPerformanceMetrics" ADD CONSTRAINT "AgentPerformanceMetrics_agentId_fkey" FOREIGN KEY ("agentId") REFERENCES "Agent"("id") ON DELETE CASCADE ON UPDATE CASCADE;

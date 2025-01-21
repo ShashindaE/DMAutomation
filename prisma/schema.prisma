@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // Uses connection pooling
+  directUrl = env("DIRECT_URL") // Uses direct connection
 }
 
 model User {
@@ -45,18 +46,18 @@ model Integrations {
 }
 
 model Automation {
-  id            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name          String              @default("Untitled")
-  createdAt     DateTime            @default(now())
-  active        Boolean             @default(false)
-  trigger       Trigger[]
-  listener      Listener?
-  posts         Post[]
-  dms           Dms[]
-  User          User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId        String?             @db.Uuid
-  keywords      Keyword[]
-  conversations AgentConversation[]
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String     @default("Untitled")
+  createdAt    DateTime   @default(now())
+  active       Boolean    @default(false)
+  smartTrigger Boolean    @default(false)
+  trigger      Trigger[]
+  listener     Listener?
+  posts        Post[]
+  dms          Dms[]
+  User         User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String?    @db.Uuid
+  keywords     Keyword[]
 }
 
 model Dms {
@@ -113,51 +114,8 @@ model Workspace {
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  agents      Agent[]
   User        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String?  @db.Uuid
-}
-
-model Agent {
-  id            String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name          String
-  description   String
-  capabilities  String[]
-  model         String
-  temperature   Float
-  maxTokens     Int
-  systemPrompt  String
-  active        Boolean                   @default(true)
-  metricsPeriod String                    @default("DAILY")
-  workspaceId   String                    @db.Uuid
-  workspace     Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  metrics       AgentPerformanceMetrics[]
-  conversations AgentConversation[]
-  createdAt     DateTime                  @default(now())
-  updatedAt     DateTime                  @updatedAt
-}
-
-model AgentConversation {
-  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  agentId      String      @db.Uuid
-  agent        Agent       @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  userId       String      @db.Uuid
-  automationId String?     @db.Uuid
-  automation   Automation? @relation(fields: [automationId], references: [id])
-  turns        Json[]
-  status       String
-  startedAt    DateTime
-  endedAt      DateTime?
-  metadata     Json?
-}
-
-model AgentPerformanceMetrics {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  agentId   String   @db.Uuid
-  agent     Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
-  period    String
-  metrics   Json
-  timestamp DateTime
 }
 
 enum SUBSCRIPTION_PLAN {

@@ -1,9 +1,9 @@
 import {
-  AutomationDuoToneWhite,
-  HomeDuoToneWhite,
-  RocketDuoToneWhite,
-  SettingsDuoToneWhite,
-} from '@/icons'
+  LayoutDashboard,
+  MessageSquare,
+  Settings,
+  Rocket
+} from 'lucide-react'
 import { v4 as uuid } from 'uuid'
 
 export type FieldProps = {
@@ -18,22 +18,22 @@ type SideBarProps = {
 export const SIDEBAR_MENU: SideBarProps[] = [
   {
     id: uuid(),
-    label: 'home',
-    icon: <HomeDuoToneWhite />,
+    label: 'dashboard',
+    icon: <LayoutDashboard className="w-5 h-5" />,
   },
   {
     id: uuid(),
     label: 'automations',
-    icon: <AutomationDuoToneWhite />,
+    icon: <MessageSquare className="w-5 h-5" />,
   },
   {
     id: uuid(),
     label: 'integrations',
-    icon: <RocketDuoToneWhite />,
+    icon: <Rocket className="w-5 h-5" />,
   },
   {
     id: uuid(),
     label: 'settings',
-    icon: <SettingsDuoToneWhite />,
+    icon: <Settings className="w-5 h-5" />,
   },
 ]

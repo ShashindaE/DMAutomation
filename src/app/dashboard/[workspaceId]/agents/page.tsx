@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { AgentCapability, AgentConfig } from '@/lib/ai/agents/types';
+import { onBoardUser } from '@/actions/user';
 
 export default async function AgentsPage({
   params,
@@ -17,88 +18,67 @@ export default async function AgentsPage({
     redirect('/auth-callback?origin=dashboard');
   }
 
-  const workspace = await db.workspace.findUnique({
-    where: {
-      id: params.workspaceId,
-      userId: user.id,
-    },
-    include: {
-      agents: true,
-    },
-  });
+  // First try to get the workspace directly
+  try {
+    const workspace = await db.workspace.findUnique({
+      where: {
+        id: params.workspaceId,
+        userId: user.id,
+      },
+      include: {
+        agents: true,
+      },
+    });
 
-  if (!workspace) {
-    redirect('/dashboard');
+    if (workspace) {
+      // Convert database agents to AgentConfig type
+      const agents: AgentConfig[] = workspace.agents.map((agent) => ({
+        id: agent.id,
+        name: agent.name,
+        description: agent.description,
+        languages: agent.languages,
+        basePersonality: agent.basePersonality || '',
+        createdAt: agent.createdAt,
+        updatedAt: agent.updatedAt,
+      }));
+
+      return (
+        <div className="p-6">
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold">AI Agents</h1>
+            <p className="text-muted-foreground mt-2">
+              Manage your AI agents and their capabilities
+            </p>
+          </div>
+
+          <div className="mb-8">
+            <Link href={`/dashboard/${params.workspaceId}/agents/new`}>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Create New Agent
+              </Button>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {agents.map((agent) => (
+              <AgentCard key={agent.id} agent={agent} workspaceId={params.workspaceId} />
+            ))}
+          </div>
+        </div>
+      );
+    }
+  } catch (error) {
+    console.error('Error accessing workspace:', error);
   }
 
-  // Convert database agents to AgentConfig type
-  const agents: AgentConfig[] = workspace.agents.map(agent => ({
-    id: agent.id,
-    name: agent.name,
-    description: agent.description,
-    capabilities: agent.capabilities as AgentCapability[],
-    model: agent.model,
-    temperature: agent.temperature,
-    maxTokens: agent.maxTokens,
-    systemPrompt: agent.systemPrompt,
-    active: agent.active,
-    createdAt: agent.createdAt,
-    updatedAt: agent.updatedAt,
-  }));
+  // If we get here, either the workspace wasn't found or there was an error
+  // Try to get or create a valid workspace
+  const userResult = await onBoardUser();
+  if (userResult.status === 200 || userResult.status === 201) {
+    redirect(`/dashboard/${userResult.data.workspaceId}`);
+  }
 
-  return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-4xl font-bold">AI Agents</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage your AI agents and their capabilities
-          </p>
-        </div>
-        <Button asChild>
-          <Link href={`/dashboard/${params.workspaceId}/agents/new`}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Agent
-          </Link>
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {agents.map((agent) => (
-          <AgentCard
-            key={agent.id}
-            agent={agent}
-            onToggleActive={(id, active) => {}}
-            onEdit={(id) =>
-              redirect(`/dashboard/${params.workspaceId}/agents/${id}`)
-            }
-            onDelete={(id) => {}}
-            onViewMetrics={(id) =>
-              redirect(`/dashboard/${params.workspaceId}/agents/${id}/metrics`)
-            }
-            onViewConversations={(id) =>
-              redirect(
-                `/dashboard/${params.workspaceId}/agents/${id}/conversations`
-              )
-            }
-          />
-        ))}
-      </div>
-
-      {agents.length === 0 && (
-        <div className="text-center mt-10">
-          <h3 className="text-lg font-semibold">No agents found</h3>
-          <p className="text-muted-foreground mt-2">
-            Create your first AI agent to get started
-          </p>
-          <Button asChild className="mt-4">
-            <Link href={`/dashboard/${params.workspaceId}/agents/new`}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Agent
-            </Link>
-          </Button>
-        </div>
-      )}
-    </div>
-  );
+  // If all else fails, redirect to the main dashboard
+  redirect('/dashboard');
 }

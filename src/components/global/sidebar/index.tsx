@@ -35,7 +35,7 @@ const Sidebar = ({ workspaceId }: Props) => {
           <LogoSmall />
         </div>
         <div className="px-4">
-          <Items slug={workspaceId} page="agents" />
+          <Items slug={workspaceId} page="dashboard" />
         </div>
         <Separator className="my-4" />
         <div className="px-4">

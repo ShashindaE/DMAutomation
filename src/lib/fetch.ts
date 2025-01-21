@@ -1,111 +1,153 @@
-import axios from 'axios'
+import axios, { AxiosError, AxiosResponse } from 'axios'
 
-export const refreshToken = async (token: string) => {
-  const refresh_token = await axios.get(
-    `${process.env.INSTAGRAM_BASE_URL}/refresh_access_token?grant_type=ig_refresh_token&access_token=${token}`
-  )
+interface TokenResponse {
+  access_token: string
+  expires_in: number
+  token_type: string
+}
 
-  return refresh_token.data
+interface MessageResponse {
+  message_id: string
+  recipient_id: string
+  status: string
+}
+
+interface FetchError extends Error {
+  status?: number
+  statusText?: string
+}
+
+export const refreshToken = async (token: string): Promise<TokenResponse> => {
+  try {
+    const response: AxiosResponse<TokenResponse> = await axios.get(
+      `${process.env.INSTAGRAM_BASE_URL}/refresh_access_token?grant_type=ig_refresh_token&access_token=${token}`
+    )
+
+    if (!response.data.access_token) {
+      throw new Error('No access token received in response')
+    }
+
+    return response.data
+  } catch (error) {
+    console.error('Error in refreshToken:', error)
+    if (error instanceof AxiosError) {
+      throw error
+    }
+    throw new Error('An unknown error occurred while refreshing token')
+  }
 }
 
 export const sendDM = async (
   userId: string,
-  recieverId: string,
+  receiverId: string,
   prompt: string,
   token: string
-) => {
-  console.log('sending message')
-  return await axios.post(
-    `${process.env.INSTAGRAM_BASE_URL}/v21.0/${userId}/messages`,
-    {
-      recipient: {
-        id: recieverId,
+): Promise<MessageResponse> => {
+  try {
+    console.log('sending message')
+    const response: AxiosResponse<MessageResponse> = await axios.post(
+      `${process.env.INSTAGRAM_BASE_URL}/v21.0/${userId}/messages`,
+      {
+        recipient: {
+          id: receiverId,
+        },
+        message: {
+          text: prompt,
+        },
       },
-      message: {
-        text: prompt,
-      },
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    )
+
+    return response.data
+  } catch (error) {
+    console.error('Error in sendDM:', error)
+    if (error instanceof AxiosError) {
+      throw error
     }
-  )
+    throw new Error('An unknown error occurred while sending DM')
+  }
 }
 
 export const sendPrivateMessage = async (
   userId: string,
-  recieverId: string,
+  receiverId: string,
   prompt: string,
   token: string
-) => {
-  console.log('sending message')
-  return await axios.post(
-    `${process.env.INSTAGRAM_BASE_URL}/${userId}/messages`,
-    {
-      recipient: {
-        comment_id: recieverId,
+): Promise<MessageResponse> => {
+  try {
+    console.log('sending message')
+    const response: AxiosResponse<MessageResponse> = await axios.post(
+      `${process.env.INSTAGRAM_BASE_URL}/${userId}/messages`,
+      {
+        recipient: {
+          comment_id: receiverId,
+        },
+        message: {
+          text: prompt,
+        },
       },
-      message: {
-        text: prompt,
-      },
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    )
+
+    return response.data
+  } catch (error) {
+    console.error('Error in sendPrivateMessage:', error)
+    if (error instanceof AxiosError) {
+      throw error
     }
-  )
+    throw new Error('An unknown error occurred while sending private message')
+  }
 }
 
-
-export const generateTokens = async (code: string) => {
+export const generateTokens = async (code: string): Promise<TokenResponse> => {
   try {
     console.log('Starting token generation with code:', code)
     const insta_form = new FormData()
-    insta_form.append('client_id', process.env.INSTAGRAM_CLIENT_ID as string)
-    insta_form.append(
-      'client_secret',
-      process.env.INSTAGRAM_CLIENT_SECRET as string
-    )
+    insta_form.append('client_id', process.env.INSTAGRAM_CLIENT_ID || '')
+    insta_form.append('client_secret', process.env.INSTAGRAM_CLIENT_SECRET || '')
     insta_form.append('grant_type', 'authorization_code')
-    insta_form.append(
-      'redirect_uri',
-      `${process.env.NEXT_PUBLIC_HOST_URL}/callback/instagram`
-    )
+    insta_form.append('redirect_uri', process.env.INSTAGRAM_REDIRECT_URI || '')
     insta_form.append('code', code)
 
-    console.log('Making request to:', process.env.INSTAGRAM_TOKEN_URL)
-    const shortTokenRes = await fetch(process.env.INSTAGRAM_TOKEN_URL as string, {
+    const shortTokenRes: Response = await fetch('https://api.instagram.com/oauth/access_token', {
       method: 'POST',
       body: insta_form,
     })
 
     if (!shortTokenRes.ok) {
-      const errorText = await shortTokenRes.text()
-      console.error('Error getting short token:', errorText)
-      throw new Error(`Failed to get short token: ${errorText}`)
+      const error = new Error('Failed to get short token') as FetchError
+      error.status = shortTokenRes.status
+      error.statusText = shortTokenRes.statusText
+      throw error
     }
 
-    const token = await shortTokenRes.json()
-    console.log('Short token response:', token)
+    const token: TokenResponse = await shortTokenRes.json()
 
     if (!token.access_token) {
-      console.error('No access token in response:', token)
-      throw new Error('No access token received')
+      throw new Error('No access token received in response')
     }
 
     console.log('Getting long-lived token...')
-    const long_token = await axios.get(
-      `${process.env.INSTAGRAM_BASE_URL}/access_token?grant_type=ig_exchange_token&client_secret=${process.env.INSTAGRAM_CLIENT_SECRET}&access_token=${token.access_token}`
+    const long_token: AxiosResponse<TokenResponse> = await axios.get(
+      `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${process.env.INSTAGRAM_CLIENT_SECRET}&access_token=${token.access_token}`
     )
 
-    console.log('Long token response:', long_token.data)
     return long_token.data
   } catch (error) {
     console.error('Error in generateTokens:', error)
-    throw error
+    if (error instanceof Error) {
+      throw error
+    }
+    throw new Error('An unknown error occurred while generating tokens')
   }
 }

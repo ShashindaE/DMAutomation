@@ -1,10 +1,25 @@
 import { openai } from '../openai';
 import { contextManager } from './context-manager';
-import { AIResponse, Entity, Message } from './types';
+import { Entity, Message } from './types';
+
+interface AIContext {
+  userPreferences?: {
+    language?: string
+    expertise?: 'beginner' | 'intermediate' | 'expert'
+  }
+  conversationHistory?: Message[]
+}
+
+interface AIResponse {
+  content: string
+  type: 'success' | 'error'
+  followUpQuestions?: string[]
+}
 
 export class EnhancedAI {
   private static instance: EnhancedAI;
   private readonly commonPatterns: Array<[RegExp, string]>;
+  private context: AIContext;
 
   private constructor() {
     // Initialize common patterns for quick responses
@@ -14,6 +29,7 @@ export class EnhancedAI {
       [/help|support/i, 'help'],
       [/thank(s| you)/i, 'gratitude']
     ];
+    this.context = {};
   }
 
   public static getInstance(): EnhancedAI {
@@ -28,38 +44,33 @@ export class EnhancedAI {
     sessionId: string,
     message: string
   ): Promise<AIResponse> {
-    // Get conversation context
-    const context = contextManager.getContext(userId, sessionId);
-
-    // Check for common patterns first
-    const quickResponse = this.checkCommonPatterns(message);
-    if (quickResponse) {
-      return this.createResponse(quickResponse, 1.0, 'pattern_match');
-    }
-
-    // Prepare conversation history for better context
-    const conversationHistory = this.prepareConversationHistory(context.previousMessages);
-
     try {
-      // Get response from OpenAI with enhanced context
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4-turbo-preview',
-        messages: [
-          {
-            role: 'system',
-            content: this.generateSystemPrompt(context)
-          },
-          ...conversationHistory,
-          { role: 'user', content: message }
-        ],
-        temperature: 0.7,
-        max_tokens: 500,
-        presence_penalty: 0.6,
-        frequency_penalty: 0.5
-      });
+      // Get conversation context
+      const context = contextManager.getContext(userId, sessionId);
+      this.context = context;
+
+      // Check for common patterns first
+      const quickResponse = this.checkCommonPatterns(message);
+      if (quickResponse) {
+        return {
+          content: quickResponse,
+          type: 'success'
+        };
+      }
+
+      // Prepare conversation history
+      const history = this.prepareConversationHistory(context.previousMessages);
+
+      // Generate system prompt
+      const systemPrompt = this.generateSystemPrompt(this.context);
+
+      // Process message with AI model
+      const response = await this.callAIModel(message, history, systemPrompt);
+
+      // Generate follow-up questions
+      const followUpQuestions = this.generateFollowUpQuestions(response);
 
       // Extract and process the response
-      const aiResponse = completion.choices[0]?.message?.content || '';
       const entities = await this.extractEntities(message);
       const intent = await this.detectIntent(message, entities);
 
@@ -71,14 +82,18 @@ export class EnhancedAI {
         metadata: { intent, entities }
       });
 
-      return this.createResponse(aiResponse, 0.9, intent, entities);
+      return {
+        content: response,
+        type: 'success',
+        followUpQuestions
+      };
+
     } catch (error) {
       console.error('Error processing message:', error);
-      return this.createResponse(
-        'I apologize, but I encountered an error processing your request.',
-        0.5,
-        'error'
-      );
+      return {
+        content: 'I apologize, but I encountered an error processing your request. Please try again.',
+        type: 'error'
+      };
     }
   }
 
@@ -126,25 +141,24 @@ export class EnhancedAI {
     return response.choices[0]?.message?.content?.toLowerCase() || 'unknown';
   }
 
-  private generateSystemPrompt(context: any): string {
+  private generateSystemPrompt(context: AIContext): string {
     const { userPreferences } = context;
-    return `
-      You are an AI assistant with the following preferences:
-      - Language: ${userPreferences?.language || 'en'}
-      - Response Style: ${userPreferences?.responseStyle || 'concise'}
-      - Timezone: ${userPreferences?.timezone || 'UTC'}
-      
-      Maintain conversation context and provide relevant, contextual responses.
-      If you're unsure about something, ask for clarification.
-      Always aim to be helpful while maintaining a natural conversation flow.
-    `.trim();
+    let prompt = 'You are a helpful AI assistant.';
+
+    if (userPreferences?.language) {
+      prompt += ` Please respond in ${userPreferences.language}.`;
+    }
+
+    if (userPreferences?.expertise) {
+      prompt += ` Adjust explanations for ${userPreferences.expertise} level understanding.`;
+    }
+
+    return prompt;
   }
 
-  private prepareConversationHistory(messages: Message[]): any[] {
-    return messages.map(msg => ({
-      role: msg.role,
-      content: msg.content
-    }));
+  private prepareConversationHistory(messages: Message[]): Message[] {
+    // Keep only the last 10 messages to maintain context without overloading
+    return messages.slice(-10);
   }
 
   private checkCommonPatterns(message: string): string | null {
@@ -167,32 +181,38 @@ export class EnhancedAI {
     return options[Math.floor(Math.random() * options.length)];
   }
 
-  private createResponse(
-    text: string,
-    confidence: number,
-    intent: string,
-    entities: Entity[] = []
-  ): AIResponse {
-    return {
-      text,
-      confidence,
-      context: {
-        intent,
-        entities,
-        followUpQuestions: this.generateFollowUpQuestions(text, intent)
-      }
-    };
+  private async callAIModel(
+    message: string,
+    history: Message[],
+    systemPrompt: string
+  ): Promise<string> {
+    // Get response from OpenAI with enhanced context
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4-turbo-preview',
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt
+        },
+        ...history,
+        { role: 'user', content: message }
+      ],
+      temperature: 0.7,
+      max_tokens: 500,
+      presence_penalty: 0.6,
+      frequency_penalty: 0.5
+    });
+
+    // Extract and process the response
+    return completion.choices[0]?.message?.content || '';
   }
 
-  private generateFollowUpQuestions(response: string, intent: string): string[] {
-    // Simple logic to generate follow-up questions based on the response and intent
+  private generateFollowUpQuestions(response: string): string[] {
     const questions: string[] = [];
-    
-    if (intent === 'greeting') {
-      questions.push('What can I help you with today?');
-    } else if (response.length > 100) {
+
+    // Add contextual follow-up questions
+    if (response.length > 100) {
       questions.push('Would you like me to explain anything in more detail?');
-      questions.push('Do you have any specific questions about what I\'ve explained?');
     }
 
     return questions;
