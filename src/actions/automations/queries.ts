@@ -40,7 +40,11 @@ export const getAutomations = async (clerkId: string) => {
         },
         include: {
           keywords: true,
-          listener: true,
+          listener: {
+            include: {
+              agent: true
+            }
+          },
         },
       },
     },
@@ -56,7 +60,11 @@ export const findAutomation = async (id: string) => {
       keywords: true,
       trigger: true,
       posts: true,
-      listener: true,
+      listener: {
+        include: {
+          agent: true
+        }
+      },
       User: {
         select: {
           subscription: true,

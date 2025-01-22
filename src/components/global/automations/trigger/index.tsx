@@ -20,7 +20,7 @@ type Props = {
 
 const Trigger = ({ id }: Props) => {
   const { types, onSetTrigger, onSaveTrigger, isPending } = useTriggers(id)
-  const { data } = useQueryAutomation(id)
+  const { data, refetch, isLoading, isError } = useQueryAutomation(id)
   const [editOpen, setEditOpen] = React.useState(false)
 
   const handleTriggerSelect = (type: typeof AUTOMATION_TRIGGERS[number]['type']) => {
@@ -28,9 +28,22 @@ const Trigger = ({ id }: Props) => {
   }
 
   const handleCreateTrigger = async () => {
-    if (types && types.length > 0) {
-      await onSaveTrigger()
+    try {
+      if (types && types.length > 0) {
+        await onSaveTrigger()
+        await refetch()
+      }
+    } catch (error) {
+      console.error('Error creating trigger:', error)
     }
+  }
+
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
+
+  if (isError || !data) {
+    return <div>Error loading automation</div>
   }
 
   if (data?.data && data?.data?.trigger.length > 0) {

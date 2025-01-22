@@ -89,6 +89,8 @@ model Listener {
   commentReply String?
   dmCount      Int        @default(0)
   commentCount Int        @default(0)
+  agent        Agent?     @relation(fields: [agentId], references: [id])
+  agentId      String?    @db.Uuid
 }
 
 model Trigger {
@@ -122,20 +124,21 @@ model Workspace {
 model Agent {
   id            String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name          String
-  description   String
+  description   String?
   capabilities  String[]
-  model         String
-  temperature   Float
-  maxTokens     Int
-  systemPrompt  String
+  model         String                    @default("gpt-3.5-turbo")
+  temperature   Float                     @default(0.7)
+  maxTokens     Int                       @default(150)
+  systemPrompt  String                    @default("")
   active        Boolean                   @default(true)
   metricsPeriod String                    @default("DAILY")
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
   workspaceId   String                    @db.Uuid
   workspace     Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   metrics       AgentPerformanceMetrics[]
   conversations AgentConversation[]
-  createdAt     DateTime                  @default(now())
-  updatedAt     DateTime                  @updatedAt
+  listeners     Listener[] // Relation to Listener model
 }
 
 model AgentConversation {

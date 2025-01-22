@@ -1,10 +1,10 @@
 export type AgentCapability = 
-  | 'CUSTOMER_SERVICE'
-  | 'CONTENT_CREATION'
-  | 'DATA_ANALYSIS'
-  | 'SOCIAL_MEDIA'
-  | 'SALES'
-  | 'TECHNICAL_SUPPORT';
+  | 'CHAT'
+  | 'SEARCH'
+  | 'CODE'
+  | 'WRITE'
+  | 'ANALYZE'
+  | 'SOCIAL_MEDIA';
 
 export interface TrainingData {
   id: string;
@@ -19,13 +19,15 @@ export interface TrainingData {
 export interface AgentConfig {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   capabilities: AgentCapability[];
   model: string;
   temperature: number;
   maxTokens: number;
   systemPrompt: string;
   active: boolean;
+  metricsPeriod: string;
+  workspaceId: string;
   createdAt: Date;
   updatedAt: Date;
 }

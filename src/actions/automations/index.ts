@@ -72,22 +72,28 @@ export const getAllAutomations = async () => {
   const user = await onCurrentUser()
   try {
     const automations = await getAutomations(user.id)
-    if (automations) return { status: 200, data: automations.automations }
-    return { status: 404, data: [] }
+    if (!automations) {
+      console.log('No automations found for user:', user.id)
+      return { status: 404, data: [] }
+    }
+    return { status: 200, data: automations.automations }
   } catch (error) {
+    console.error('Error fetching automations:', error)
     return { status: 500, data: [] }
   }
 }
 
 export const getAutomationInfo = async (id: string) => {
-  await onCurrentUser()
   try {
     const automation = await findAutomation(id)
-    if (automation) return { status: 200, data: automation }
-
-    return { status: 404 }
+    if (!automation) {
+      console.log('No automation found with id:', id)
+      return { status: 404, data: null }
+    }
+    return { status: 200, data: automation }
   } catch (error) {
-    return { status: 500 }
+    console.error('Error fetching automation:', error)
+    return { status: 500, data: null }
   }
 }
 

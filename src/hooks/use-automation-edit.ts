@@ -3,6 +3,19 @@ import { addKeyWord, deleteKeywordQuery } from '@/actions/automations/queries'
 import { useMutationData } from './use-mutation-data'
 import { toast } from 'sonner'
 
+enum LISTENERS {
+  MESSAGE = 'MESSAGE',
+  COMMENT = 'COMMENT',
+  SMARTAI = 'SMARTAI'
+}
+
+interface UpdateListenerData {
+  listener: LISTENERS;
+  prompt: string;
+  commentReply?: string | null;
+  agentId?: string | null;
+}
+
 export const useAutomationEdit = (id: string) => {
   const { isPending: isTriggerPending, mutate: updateTriggers } = useMutationData(
     ['update-trigger'],
@@ -21,13 +34,14 @@ export const useAutomationEdit = (id: string) => {
 
   const { isPending: isListenerPending, mutate: updateListener } = useMutationData(
     ['update-listener'],
-    async (data: { listener: string; prompt: string; reply?: string }) => {
+    async (data: UpdateListenerData) => {
       try {
         const result = await saveListener(
           id,
-          data.listener as 'MESSAGE' | 'SMARTAI',
+          data.listener,
           data.prompt,
-          data.reply
+          data.commentReply,
+          data.agentId
         )
         toast.success('Response updated successfully')
         return result
@@ -52,7 +66,7 @@ export const useAutomationEdit = (id: string) => {
 
   const deleteKeyword = async (automationId: string, keywordId: string) => {
     try {
-      await deleteKeywordQuery(keywordId)
+      const result = await deleteKeywordQuery(keywordId)
       toast.success('Keyword deleted')
     } catch (error) {
       toast.error('Failed to delete keyword')
