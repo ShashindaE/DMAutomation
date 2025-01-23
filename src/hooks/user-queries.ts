@@ -10,10 +10,6 @@ export const useQueryAutomations = () => {
   return useQuery({
     queryKey: ['user-automations'],
     queryFn: getAllAutomations,
-    staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
   })
 }
 
@@ -21,9 +17,8 @@ export const useQueryAutomation = (id: string) => {
   return useQuery({
     queryKey: ['automation-info', id],
     queryFn: () => getAutomationInfo(id),
-    staleTime: 0,
-    gcTime: 0,
-    retry: false,
+    staleTime: 0, // Consider data stale immediately
+    gcTime: 5 * 60 * 1000, // Cache for 5 minutes
     refetchOnMount: true,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,

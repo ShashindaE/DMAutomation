@@ -2,31 +2,11 @@
 
 import { client } from '@/lib/prisma'
 
-enum LISTENERS {
-  MESSAGE = 'MESSAGE',
-  COMMENT = 'COMMENT',
-  SMARTAI = 'SMARTAI'
-}
-
-enum TRIGGER_TYPES {
-  COMMENT = 'COMMENT',
-  DM = 'DM'
-}
-
 export async function updateTrigger(
   automationId: string,
   triggers: string[]
 ) {
   try {
-    // Validate trigger types
-    const validTriggers = triggers.filter(type => 
-      Object.values(TRIGGER_TYPES).includes(type as TRIGGER_TYPES)
-    );
-
-    if (validTriggers.length === 0) {
-      throw new Error('No valid trigger types provided');
-    }
-
     // First, delete existing triggers
     await client.trigger.deleteMany({
       where: {
@@ -35,7 +15,7 @@ export async function updateTrigger(
     })
 
     // If changing from comment to DM only, delete posts
-    const hasComment = validTriggers.includes(TRIGGER_TYPES.COMMENT)
+    const hasComment = triggers.includes('COMMENT')
     if (!hasComment) {
       await client.post.deleteMany({
         where: {
@@ -50,7 +30,7 @@ export async function updateTrigger(
       data: {
         trigger: {
           createMany: {
-            data: validTriggers.map(type => ({ type, automationId })),
+            data: triggers.map(type => ({ type })),
           },
         },
       },
@@ -62,22 +42,20 @@ export async function updateTrigger(
       },
     })
 
-    return { status: 200, data: automation }
+    return automation
   } catch (error) {
-    console.error('Error updating trigger:', error);
-    return { status: 500, data: null }
+    console.error('Error updating trigger:', error)
+    throw error
   }
 }
 
 export async function saveListener(
   automationId: string,
-  listener: LISTENERS,
+  listener: 'MESSAGE' | 'SMARTAI',
   prompt: string,
-  commentReply: string | null = null,
-  agentId: string | null = null
+  reply?: string
 ) {
   try {
-    // Update or create listener
     const automation = await client.automation.update({
       where: { id: automationId },
       data: {
@@ -86,14 +64,12 @@ export async function saveListener(
             create: {
               listener,
               prompt,
-              commentReply,
-              agentId
+              commentReply: reply,
             },
             update: {
               listener,
               prompt,
-              commentReply,
-              agentId
+              commentReply: reply,
             },
           },
         },
@@ -105,7 +81,6 @@ export async function saveListener(
         listener: true,
       },
     })
-
     return automation
   } catch (error) {
     console.error('Error saving listener:', error)

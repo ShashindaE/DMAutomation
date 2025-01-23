@@ -5,11 +5,10 @@ import { QueryClient, QueryFunction } from '@tanstack/react-query'
 const prefetch = async (
   client: QueryClient,
   action: QueryFunction,
-  key: string,
-  ...args: any[]
+  key: string
 ) => {
   return await client.prefetchQuery({
-    queryKey: [key, ...args],
+    queryKey: [key],
     queryFn: action,
     staleTime: 60000,
   })
@@ -30,7 +29,6 @@ export const PrefetchUserAutomation = async (
   return await prefetch(
     client,
     () => getAutomationInfo(automationId),
-    'automation-info',
-    automationId
+    'automation-info'
   )
 }

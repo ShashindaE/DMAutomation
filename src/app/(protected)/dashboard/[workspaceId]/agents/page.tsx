@@ -1,11 +1,22 @@
 import { db } from '@/lib/db';
 import { redirect } from 'next/navigation';
-import { AgentConfig, AgentCapability } from '@/lib/ai/agents/types';
+import { AgentCapability, AgentConfig } from '@/lib/ai/agents/types';
 import { AgentsList } from './_components/agents-list';
 import { currentUser } from '@clerk/nextjs/server';
-import { Prisma } from '@prisma/client';
 
-type AgentWithoutRelations = Prisma.AgentGetPayload<{}>;
+interface Agent {
+  id: string;
+  name: string;
+  description: string;
+  capabilities: string[];
+  model: string;
+  temperature: number;
+  maxTokens: number;
+  systemPrompt: string;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export default async function AgentsPage({
   params,
@@ -35,6 +46,7 @@ export default async function AgentsPage({
   console.log("Looking for workspace:", params.workspaceId);
   console.log("Available workspaces:", dbUser.workspaces.map(w => ({ id: w.id, name: w.name })));
 
+  // Find the workspace by ID
   const workspace = dbUser.workspaces.find(w => w.id === params.workspaceId);
 
   if (!workspace) {
@@ -44,30 +56,23 @@ export default async function AgentsPage({
 
   console.log("Found workspace:", workspace.id);
 
-  // Get agents with proper Prisma type
-  const agents = await db.agent.findMany({
+  // Now get the agents for this workspace
+  const workspaceWithAgents = await db.workspace.findUnique({
     where: {
-      workspaceId: params.workspaceId
+      id: workspace.id
     },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      capabilities: true,
-      model: true,
-      temperature: true,
-      maxTokens: true,
-      systemPrompt: true,
-      active: true,
-      metricsPeriod: true,
-      workspaceId: true,
-      createdAt: true,
-      updatedAt: true
+    include: {
+      agents: true
     }
   });
 
-  // Map the agents to AgentConfig type
-  const agentConfigs: AgentConfig[] = agents.map(agent => ({
+  if (!workspaceWithAgents) {
+    console.log("Could not fetch workspace with agents");
+    redirect('/dashboard');
+  }
+
+  // Convert database agents to AgentConfig type
+  const agents: AgentConfig[] = (workspaceWithAgents.agents as Agent[])?.map(agent => ({
     id: agent.id,
     name: agent.name,
     description: agent.description,
@@ -77,15 +82,9 @@ export default async function AgentsPage({
     maxTokens: agent.maxTokens,
     systemPrompt: agent.systemPrompt,
     active: agent.active,
-    metricsPeriod: agent.metricsPeriod,
-    workspaceId: agent.workspaceId,
     createdAt: agent.createdAt,
-    updatedAt: agent.updatedAt
-  }));
+    updatedAt: agent.updatedAt,
+  })) || [];
 
-  return (
-    <div className="flex flex-col gap-4 p-4">
-      <AgentsList agents={agentConfigs} workspaceId={params.workspaceId} />
-    </div>
-  );
+  return <AgentsList agents={agents} workspaceId={workspace.id} />;
 }

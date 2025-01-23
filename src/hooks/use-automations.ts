@@ -114,29 +114,11 @@ export const useTriggers = (id: string) => {
 
   const { isPending, mutate } = useMutationData(
     ['add-trigger'],
-    async (variables: { types: string[] }) => {
-      if (!variables.types.length) {
-        throw new Error('Please select at least one trigger type');
-      }
-      const result = await saveTrigger(id, variables.types);
-      if (!result?.data) {
-        throw new Error('Failed to save trigger');
-      }
-      return result;
-    },
+    (data: { types: string[] }) => saveTrigger(id, data.types),
     'automation-info'
   )
 
-  const onSaveTrigger = async () => {
-    if (types.length > 0) {
-      try {
-        await mutate({ types });
-      } catch (error) {
-        console.error('Error saving trigger:', error);
-      }
-    }
-  }
-  
+  const onSaveTrigger = () => mutate({ types })
   return { types, onSetTrigger, onSaveTrigger, isPending }
 }
 

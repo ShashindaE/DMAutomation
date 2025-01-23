@@ -7,7 +7,6 @@ import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
-import { toggleAgentActive, deleteAgent } from '../actions';
 
 interface AgentsListProps {
   agents: AgentConfig[];
@@ -17,36 +16,22 @@ interface AgentsListProps {
 export function AgentsList({ agents = [], workspaceId }: AgentsListProps) {
   const handleToggleActive = useCallback(async (id: string, active: boolean) => {
     try {
-      const formData = new FormData();
-      formData.append('agentId', id);
-      formData.append('active', active.toString());
-
-      const result = await toggleAgentActive(formData);
-      if (result.success) {
-        toast.success(`Agent ${active ? 'activated' : 'deactivated'}`);
-      } else {
-        throw new Error(result.error);
-      }
+      // TODO: Implement toggle active API call
+      toast.success(`Agent ${active ? 'activated' : 'deactivated'}`);
     } catch (error) {
       toast.error('Failed to update agent status');
     }
   }, []);
 
   const handleEdit = useCallback((id: string) => {
+    // Navigate to edit page
     window.location.href = `/dashboard/${workspaceId}/agents/${id}/edit`;
   }, [workspaceId]);
 
   const handleDelete = useCallback(async (id: string) => {
     try {
-      const formData = new FormData();
-      formData.append('agentId', id);
-
-      const result = await deleteAgent(formData);
-      if (result.success) {
-        toast.success('Agent deleted');
-      } else {
-        throw new Error(result.error);
-      }
+      // TODO: Implement delete API call
+      toast.success('Agent deleted');
     } catch (error) {
       toast.error('Failed to delete agent');
     }
