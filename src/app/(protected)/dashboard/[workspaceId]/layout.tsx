@@ -10,8 +10,6 @@ import {
   PrefetchUserAutnomations,
   PrefetchUserProfile,
 } from '@/react-query/prefetch'
-import { currentUser } from '@clerk/nextjs/server'
-import { db } from '@/lib/db'
 
 type Props = {
   children: React.ReactNode
@@ -19,22 +17,11 @@ type Props = {
 }
 
 const Layout = async ({ children, params }: Props) => {
+
   const query = new QueryClient()
-  const user = await currentUser()
-  
-  if (!user) {
-    return null
-  }
-
-  const dbUser = await db.user.findUnique({
-    where: {
-      clerkId: user.id
-    }
-  })
-
-  const userName = dbUser?.firstname || user.firstName || ''
 
   await PrefetchUserProfile(query)
+
   await PrefetchUserAutnomations(query)
 
   return (
@@ -51,7 +38,7 @@ const Layout = async ({ children, params }: Props) => {
       overflow-auto
       "
         >
-          <InfoBar workspaceId={params.workspaceId} userName={userName} />
+          <InfoBar workspaceId={params.workspaceId} />
           {children}
         </div>
       </div>

@@ -19,10 +19,9 @@ import MainBreadCrumb from '../bread-crumbs/main-bread-crumb'
 
 type Props = {
   workspaceId: string
-  userName: string
 }
 
-const InfoBar = ({ workspaceId, userName }: Props) => {
+const InfoBar = ({ workspaceId }: Props) => {
   const { page } = usePaths()
 
   return (
@@ -76,7 +75,7 @@ const InfoBar = ({ workspaceId, userName }: Props) => {
       </div>
       <MainBreadCrumb
         page={page === workspaceId ? 'Home' : page}
-        slug={userName}
+        slug={workspaceId}
       />
     </div>
   )
